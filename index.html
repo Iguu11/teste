@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lista de Presentes - Chá de Panela</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap');
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: linear-gradient(135deg, #684bcf 0%, #e6e6e6 100%);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(6px);
+      padding: 30px 20px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5rem;
+      color: #000000;
+    }
+
+    #giftList {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 30px;
+    }
+
+    .gift {
+      background: rgba(255,255,255,0.9);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(226, 108, 108, 0.1);
+      transition: transform 0.2s ease;
+    }
+
+    .gift:hover {
+      transform: translateY(-5px);
+    }
+
+    .gift span {
+      font-size: 1.2rem;
+      color: #000000;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      background: #000000;
+      background: linear-gradient(to right, #ff7e5f, #feb47b);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 25px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .remove-btn {
+      background: linear-gradient(to right, #000000, #f9d423);
+    }
+
+    #nameModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #modalContent {
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 320px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    #modalContent h3 {
+      margin-top: 0;
+      color: #6b4e16;
+      margin-bottom: 15px;
+    }
+
+    #modalContent input {
+      width: 100%;
+      padding: 10px;
+      margin: 15px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    #modalContent button {
+      background: linear-gradient(to right, #c7b7b4, #000000);
+      border-radius: 25px;
+      padding: 10px 20px;
+      font-size: 1rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 15px;
+      background: rgba(255,255,255,0.8);
+      color: #7763d8;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bridal Shower da RAFAELLY & DO IGOR</h1>
+  </header>
+
+  <div id="giftList"></div>
+
+  <div id="nameModal">
+    <div id="modalContent">
+      <h3 id="modalGift"></h3>
+      <input type="text" id="guestName" placeholder="Digite seu nome">
+      <button onclick="confirmGift()">Confirmar</button>
+    </div>
+  </div>
+
+  <footer>
+    Feito com carinho para o nosso Chá de Panela ❤️
+  </footer>
+
+<script>
+const gifts = [
+  "CONJUNTO DE PANELAS",
+  "JOGO DE PRATOS",
+  "FAQUEIRO",
+  "LIQUIDIFICADOR",
+  "BATEDEIRA",
+  "PORTA TEMPEROS",
+  "TÁBUA DE CORTE",
+  "PANELA DE PRESSÃO",
+  "FORMA DE BOLO",
+  "JOGO DE TOALHAS",
+  "JOGO DE COPOS"
+];
+
+let reserved = JSON.parse(localStorage.getItem('reservedGifts')) || {};
+
+const giftList = document.getElementById('giftList');
+const nameModal = document.getElementById('nameModal');
+const modalGift = document.getElementById('modalGift');
+const guestNameInput = document.getElementById('guestName');
+let currentGift = '';
+
+// Defina uma senha simples para gerência
+const adminPassword = "RAFAELLY"; // troque aqui para algo mais seguro se necessário
+
+function renderGifts() {
+  giftList.innerHTML = '';
+  gifts.forEach(gift => {
+    const div = document.createElement('div');
+    div.className = 'gift';
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'button-group';
+
+    const reserveBtn = document.createElement('button');
+    reserveBtn.textContent = reserved[gift] ? `Reservado por ${reserved[gift]}` : 'Reservar';
+    reserveBtn.disabled = !!reserved[gift];
+    reserveBtn.onclick = () => openModal(gift);
+    btnGroup.appendChild(reserveBtn);
+
+    // Botão de remover reserva (aparece só se já estiver reservado)
+    if (reserved[gift]) {
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = 'Remover Reserva';
+      removeBtn.className = 'remove-btn';
+      removeBtn.onclick = () => removeReservation(gift);
+      btnGroup.appendChild(removeBtn);
+    }
+
+    div.innerHTML = `<span>${gift}</span>`;
+    div.appendChild(btnGroup);
+    giftList.appendChild(div);
+  });
+}
+
+function openModal(gift) {
+  currentGift = gift;
+  modalGift.textContent = `Reservar: ${gift}`;
+  guestNameInput.value = '';
+  nameModal.style.display = 'flex';
+}
+
+function confirmGift() {
+  const name = guestNameInput.value.trim();
+  if (!name) return alert('Por favor, digite seu nome.');
+  reserved[currentGift] = name;
+  localStorage.setItem('reservedGifts', JSON.stringify(reserved));
+  nameModal.style.display = 'none';
+  renderGifts();
+}
+
+function removeReservation(gift) {
+  const pass = prompt('Digite a senha de administrador para remover a reserva:');
+  if (pass === adminPassword) {
+    delete reserved[gift];
+    localStorage.setItem('reservedGifts', JSON.stringify(reserved));
+    alert('Reserva removida com sucesso!');
+    renderGifts();
+  } else if (pass !== null) {
+    alert('Senha incorreta.');
+  }
+}
+
+nameModal.addEventListener('click', e => {
+  if (e.target === nameModal) nameModal.style.display = 'none';
+});
+
+renderGifts();
+</script>
+</body>
+</html>
